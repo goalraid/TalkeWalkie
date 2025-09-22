@@ -36,7 +36,7 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
   const [status, setStatus] = React.useState<CallStatus>('idle')
   const [error, setError] = React.useState<string | null>(null)
   const [isHolding, setIsHolding] = React.useState(false)
-  const [isMicMuted, setIsMicMuted] = React.useState(true)
+  const [isMicMuted, setIsMicMuted] = React.useState(false)
   const statusRef = React.useRef<CallStatus>('idle')
   const hasStartedRef = React.useRef(false)
 
@@ -106,8 +106,6 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
         connectionType: 'webrtc',
         authorization: ELEVENLABS_API_KEY,
       })
-      setIsMicMuted(true)
-      setStatus('live')
     } catch (err) {
       console.error('[ElevenLabsCallScreen] Failed to start session', err)
       const message = err instanceof Error ? err.message : 'Could not start the ElevenLabs conversation.'
