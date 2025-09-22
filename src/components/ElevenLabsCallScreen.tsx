@@ -15,6 +15,14 @@ type CallScreenProps = {
   onBack: () => void
 }
 
+type StatusChangePayload = {
+  status: 'connecting' | 'connected' | 'disconnecting' | 'disconnected'
+}
+
+type ErrorPayload = {
+  message: string
+}
+
 async function ensureMicrophonePermission() {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('Microphone access is not supported in this browser.')
@@ -30,39 +38,56 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
   const [isHolding, setIsHolding] = React.useState(false)
   const [isMicMuted, setIsMicMuted] = React.useState(true)
   const statusRef = React.useRef<CallStatus>('idle')
-
-  const conversation = useConversation({
-    micMuted: isMicMuted,
-    onStatusChange: ({ status }) => {
-      if (status === 'connected') {
-        setStatus('live')
-      }
-      if (status === 'disconnecting' || status === 'disconnected') {
-        setStatus('ended')
-        setIsHolding(false)
-        setIsMicMuted(true)
-      }
-    },
-    onDisconnect: () => {
-      setStatus('ended')
-      setIsHolding(false)
-      setIsMicMuted(true)
-    },
-    onError: (message) => {
-      console.error('[ElevenLabsCallScreen] conversation error', message)
-      setStatus('error')
-      setError(message)
-      setIsHolding(false)
-      setIsMicMuted(true)
-    },
-  })
+  const hasStartedRef = React.useRef(false)
 
   React.useEffect(() => {
     statusRef.current = status
   }, [status])
 
+  const handleStatusChange = React.useCallback(({ status }: StatusChangePayload) => {
+    if (status === 'connected') {
+      setStatus('live')
+      setIsHolding(false)
+      setIsMicMuted(true)
+    }
+    if (status === 'disconnecting' || status === 'disconnected') {
+      setStatus('ended')
+      setIsHolding(false)
+      setIsMicMuted(true)
+      hasStartedRef.current = false
+    }
+  }, [])
+
+  const handleDisconnect = React.useCallback(() => {
+    setStatus('ended')
+    setIsHolding(false)
+    setIsMicMuted(true)
+    hasStartedRef.current = false
+  }, [])
+
+  const handleError = React.useCallback((messageOrPayload: string | ErrorPayload) => {
+    const message = typeof messageOrPayload === 'string' ? messageOrPayload : messageOrPayload?.message
+    setStatus('error')
+    setError(message || 'ElevenLabs conversation error')
+    setIsHolding(false)
+    setIsMicMuted(true)
+    hasStartedRef.current = false
+  }, [])
+
+  const conversation = useConversation(
+    React.useMemo(
+      () => ({
+        micMuted: isMicMuted,
+        onStatusChange: handleStatusChange,
+        onDisconnect: handleDisconnect,
+        onError: handleError,
+      }),
+      [isMicMuted, handleStatusChange, handleDisconnect, handleError],
+    ),
+  )
+
   const startSession = React.useCallback(async () => {
-    if (statusRef.current === 'connecting' || statusRef.current === 'live') return
+    if (hasStartedRef.current || statusRef.current === 'live') return
 
     if (!ELEVENLABS_API_KEY) {
       setError('Missing ElevenLabs API key. Set VITE_ELEVENLABS_API_KEY and reload.')
@@ -72,13 +97,14 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
 
     setError(null)
     setStatus('connecting')
+    hasStartedRef.current = true
 
     try {
       await ensureMicrophonePermission()
       await conversation.startSession({
         agentId,
         connectionType: 'webrtc',
-        authorization: `Bearer ${ELEVENLABS_API_KEY}`,
+        authorization: ELEVENLABS_API_KEY,
       })
       setIsMicMuted(true)
       setStatus('live')
@@ -88,6 +114,7 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
       setError(message)
       setStatus('error')
       setIsMicMuted(true)
+      hasStartedRef.current = false
     }
   }, [agentId, conversation])
 
@@ -98,6 +125,7 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
     setStatus('ended')
     setIsHolding(false)
     setIsMicMuted(true)
+    hasStartedRef.current = false
   }, [conversation])
 
   const handleHoldStart = React.useCallback(() => {
@@ -164,8 +192,8 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
 
   const microphoneMessage = isLive
     ? isMicMuted
-      ? 'Mic muted â€” hold the button to speak'
-      : 'Mic live â€” release to mute'
+      ? 'Mic muted — hold the button to speak'
+      : 'Mic live — release to mute'
     : status === 'connecting'
       ? 'Mic will stay muted until connected'
       : 'Mic muted'
