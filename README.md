@@ -7,6 +7,7 @@ TalkieWalkie is a minimal "scan -> talk" web app: scan a QR code, resolve it to 
 - Flexible QR payload support (`rio`, `talkiewalkie://agent/rio`, `{ "agent": "rio" }`).
 - Local agent map that resolves to Vapi assistant IDs (RIO included out of the box).
 - Just-in-time microphone permission requests and Start/End Call controls via the Vapi Web SDK.
+- Mode selector lets you switch between the Vapi and ElevenLabs agent experiences.
 - Push-to-talk mic control: hold a button to speak, release to mute instantly.
 - Permission dashboard to request camera/mic access and surface current browser status.
 - Clean teardown of camera and call resources when navigating between screens.
@@ -14,6 +15,7 @@ TalkieWalkie is a minimal "scan -> talk" web app: scan a QR code, resolve it to 
 ## Prerequisites
 - Node.js 18+ (or any version supported by Vite 7).
 - A Vapi **public** API key (safe to expose in the browser).
+- An ElevenLabs **agent** API key for the ElevenLabs mode.
 
 ## Getting Started
 1. Install dependencies:
@@ -23,7 +25,7 @@ TalkieWalkie is a minimal "scan -> talk" web app: scan a QR code, resolve it to 
 2. Copy the environment template and add your Vapi key:
    ```bash
    cp .env.example .env
-   # edit .env and set VITE_VAPI_PUBLIC_KEY
+   # edit .env and set VITE_VAPI_PUBLIC_KEY and VITE_ELEVENLABS_API_KEY
    ```
 3. Run the development server (HTTPS-ready on `localhost`):
    ```bash

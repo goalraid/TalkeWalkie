@@ -76,6 +76,95 @@ button:not(:disabled):hover {
   font-size: 1rem;
 }
 
+.app--home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 3rem 1.5rem;
+}
+
+.app__header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.app__mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.app__mode-label {
+  font-size: 0.95rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.app__mode-switch {
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.app__selector {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem 1.75rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.15);
+  text-align: center;
+}
+
+.app__selector-label {
+  margin: 0;
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.app__selector-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.app__selector-button {
+  width: 100%;
+  min-height: 3.25rem;
+  font-size: 1.05rem;
+}
+
+.app__selector-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+@media (min-width: 640px) {
+  .app__mode {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .app__selector-actions {
+    flex-direction: row;
+  }
+}
+
 .app__permissions {
   display: flex;
   flex-direction: column;

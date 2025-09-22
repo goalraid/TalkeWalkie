@@ -7,9 +7,18 @@ export const AGENTS: Record<string, AgentInfo> = {
   rio: { id: '1e171fee-c39d-4848-a6fd-2e658a442ff0', label: 'RIO' },
 }
 
-const AGENT_LOOKUP = Object.fromEntries(
-  Object.entries(AGENTS).map(([key, info]) => [key.toLowerCase(), info]),
-) as Record<string, AgentInfo>
+export const ELEVENLABS_AGENTS: Record<string, AgentInfo> = {
+  rio: { id: 'agent_1101k5skt77qetsstmz8x7j9t5pv', label: 'RIO (ElevenLabs)' },
+}
+
+function createLookup(map: Record<string, AgentInfo>) {
+  return Object.fromEntries(
+    Object.entries(map).map(([key, info]) => [key.toLowerCase(), info]),
+  ) as Record<string, AgentInfo>
+}
+
+export const VAPI_LOOKUP = createLookup(AGENTS)
+export const ELEVENLABS_LOOKUP = createLookup(ELEVENLABS_AGENTS)
 
 export function resolveAgentKey(payload: string): string | null {
   if (!payload) return null
@@ -38,9 +47,9 @@ export function resolveAgentKey(payload: string): string | null {
   return trimmed
 }
 
-export function getAgentByKey(key: string | null): AgentInfo | null {
+export function getAgentByKey(lookup: Record<string, AgentInfo>, key: string | null): AgentInfo | null {
   if (!key) return null
   const normalized = key.trim().toLowerCase()
   if (!normalized) return null
-  return AGENT_LOOKUP[normalized] ?? null
+  return lookup[normalized] ?? null
 }
