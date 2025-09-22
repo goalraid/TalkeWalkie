@@ -23,26 +23,68 @@ type ErrorPayload = {
   message: string
 }
 
-async function ensureMicrophonePermission() {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('Microphone access is not supported in this browser.')
-  }
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  stream.getTracks().forEach((track) => track.stop())
-}
-
 export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label, onBack }) => {
   const [status, setStatus] = React.useState<CallStatus>('idle')
   const [error, setError] = React.useState<string | null>(null)
   const [isHolding, setIsHolding] = React.useState(false)
-  const [isMicMuted, setIsMicMuted] = React.useState(false)
+  const [isMicMuted, setIsMicMuted] = React.useState(true)
   const statusRef = React.useRef<CallStatus>('idle')
   const hasStartedRef = React.useRef(false)
 
   React.useEffect(() => {
     statusRef.current = status
   }, [status])
+
+  const originalGetUserMediaRef = React.useRef<typeof navigator.mediaDevices.getUserMedia | null>(null)
+  const activeTracksRef = React.useRef<MediaStreamTrack[]>([])
+  const isMicMutedRef = React.useRef(true)
+
+  React.useEffect(() => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return
+    }
+
+    const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+    originalGetUserMediaRef.current = original
+
+    navigator.mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+      const stream = await original(constraints || { audio: true })
+      if (constraints?.audio) {
+        activeTracksRef.current = stream.getAudioTracks()
+        activeTracksRef.current.forEach((track) => {
+          track.enabled = !isMicMutedRef.current
+        })
+      }
+      return stream
+    }
+
+    return () => {
+      navigator.mediaDevices.getUserMedia = original
+      activeTracksRef.current.forEach((track) => track.stop())
+      activeTracksRef.current = []
+    }
+  }, [])
+
+  React.useEffect(() => {
+    isMicMutedRef.current = isMicMuted
+    activeTracksRef.current.forEach((track) => {
+      track.enabled = !isMicMuted
+    })
+  }, [isMicMuted])
+
+  const ensureMicrophonePermission = React.useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Microphone access is not supported in this browser.')
+    }
+
+    const getUserMedia = (
+      originalGetUserMediaRef.current?.bind(navigator.mediaDevices) ||
+      navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+    )
+
+    const stream = await getUserMedia({ audio: true })
+    stream.getTracks().forEach((track) => track.stop())
+  }, [])
 
   const handleStatusChange = React.useCallback(({ status }: StatusChangePayload) => {
     if (status === 'connected') {
@@ -77,12 +119,11 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
   const conversation = useConversation(
     React.useMemo(
       () => ({
-        micMuted: isMicMuted,
         onStatusChange: handleStatusChange,
         onDisconnect: handleDisconnect,
         onError: handleError,
       }),
-      [isMicMuted, handleStatusChange, handleDisconnect, handleError],
+      [handleStatusChange, handleDisconnect, handleError],
     ),
   )
 
@@ -114,7 +155,7 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
       setIsMicMuted(true)
       hasStartedRef.current = false
     }
-  }, [agentId, conversation])
+  }, [agentId, conversation, ensureMicrophonePermission])
 
   const endSession = React.useCallback(() => {
     conversation.endSession().catch((err) => {
@@ -171,9 +212,10 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startSession, conversation])
+  }, [startSession, conversation, ensureMicrophonePermission])
 
   const isLive = status === 'live'
+
   const isConnecting = status === 'connecting'
   const isError = status === 'error'
 
