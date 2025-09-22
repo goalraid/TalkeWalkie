@@ -76,6 +76,82 @@ button:not(:disabled):hover {
   font-size: 1rem;
 }
 
+.app__permissions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
+.app__permission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.app__permission-request,
+.app__permission-refresh {
+  flex: 1 1 220px;
+  min-height: 2.75rem;
+}
+
+.app__permission-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.app__permission-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #1e293b;
+  text-transform: capitalize;
+}
+
+.app__permission-badge--granted {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.app__permission-badge--denied {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.app__permission-badge--prompt {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.app__permission-badge--unsupported {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.app__permission-error {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.app__permission-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
 .scanner-section {
   flex: 1;
   display: flex;
