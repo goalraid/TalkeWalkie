@@ -26,8 +26,6 @@ type ErrorPayload = {
 export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label, onBack }) => {
   const [status, setStatus] = React.useState<CallStatus>('idle')
   const [error, setError] = React.useState<string | null>(null)
-  const [isHolding, setIsHolding] = React.useState(false)
-  const [isMicMuted, setIsMicMuted] = React.useState(true)
   const statusRef = React.useRef<CallStatus>('idle')
   const hasStartedRef = React.useRef(false)
 
@@ -35,75 +33,27 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
     statusRef.current = status
   }, [status])
 
-  const originalGetUserMediaRef = React.useRef<typeof navigator.mediaDevices.getUserMedia | null>(null)
-  const activeTracksRef = React.useRef<MediaStreamTrack[]>([])
-  const isMicMutedRef = React.useRef(true)
-
-  React.useEffect(() => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      return
-    }
-
-    const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
-    originalGetUserMediaRef.current = original
-
-    navigator.mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
-      const stream = await original(constraints || { audio: true })
-      if (constraints?.audio) {
-        activeTracksRef.current = stream.getAudioTracks()
-        activeTracksRef.current.forEach((track) => {
-          track.enabled = !isMicMutedRef.current
-        })
-      }
-      return stream
-    }
-
-    return () => {
-      navigator.mediaDevices.getUserMedia = original
-      activeTracksRef.current.forEach((track) => track.stop())
-      activeTracksRef.current = []
-    }
-  }, [])
-
-  React.useEffect(() => {
-    isMicMutedRef.current = isMicMuted
-    activeTracksRef.current.forEach((track) => {
-      track.enabled = !isMicMuted
-    })
-  }, [isMicMuted])
-
   const ensureMicrophonePermission = React.useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Microphone access is not supported in this browser.')
     }
 
-    const getUserMedia = (
-      originalGetUserMediaRef.current?.bind(navigator.mediaDevices) ||
-      navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
-    )
-
-    const stream = await getUserMedia({ audio: true })
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     stream.getTracks().forEach((track) => track.stop())
   }, [])
 
   const handleStatusChange = React.useCallback(({ status }: StatusChangePayload) => {
     if (status === 'connected') {
       setStatus('live')
-      setIsHolding(false)
-      setIsMicMuted(true)
     }
     if (status === 'disconnecting' || status === 'disconnected') {
       setStatus('ended')
-      setIsHolding(false)
-      setIsMicMuted(true)
       hasStartedRef.current = false
     }
   }, [])
 
   const handleDisconnect = React.useCallback(() => {
     setStatus('ended')
-    setIsHolding(false)
-    setIsMicMuted(true)
     hasStartedRef.current = false
   }, [])
 
@@ -111,8 +61,6 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
     const message = typeof messageOrPayload === 'string' ? messageOrPayload : messageOrPayload?.message
     setStatus('error')
     setError(message || 'ElevenLabs conversation error')
-    setIsHolding(false)
-    setIsMicMuted(true)
     hasStartedRef.current = false
   }, [])
 
@@ -152,7 +100,6 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
       const message = err instanceof Error ? err.message : 'Could not start the ElevenLabs conversation.'
       setError(message)
       setStatus('error')
-      setIsMicMuted(true)
       hasStartedRef.current = false
     }
   }, [agentId, conversation, ensureMicrophonePermission])
@@ -162,43 +109,8 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
       console.warn('[ElevenLabsCallScreen] Failed to end session', err)
     })
     setStatus('ended')
-    setIsHolding(false)
-    setIsMicMuted(true)
     hasStartedRef.current = false
   }, [conversation])
-
-  const handleHoldStart = React.useCallback(() => {
-    if (statusRef.current !== 'live' || isHolding) return
-    setIsHolding(true)
-    setIsMicMuted(false)
-  }, [isHolding])
-
-  const handleHoldEnd = React.useCallback(() => {
-    if (!isHolding) return
-    setIsHolding(false)
-    setIsMicMuted(true)
-  }, [isHolding])
-
-  const handleHoldKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (event.repeat) return
-      if (event.key === ' ' || event.key === 'Enter' || event.code === 'Space') {
-        event.preventDefault()
-        handleHoldStart()
-      }
-    },
-    [handleHoldStart],
-  )
-
-  const handleHoldKeyUp = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (event.key === ' ' || event.key === 'Enter' || event.code === 'Space') {
-        event.preventDefault()
-        handleHoldEnd()
-      }
-    },
-    [handleHoldEnd],
-  )
 
   React.useEffect(() => {
     startSession().catch(() => {
@@ -206,16 +118,13 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
     })
 
     return () => {
-      handleHoldEnd()
       conversation.endSession().catch((err) => {
         console.warn('[ElevenLabsCallScreen] endSession on unmount failed', err)
       })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startSession, conversation, ensureMicrophonePermission])
+  }, [startSession, conversation])
 
   const isLive = status === 'live'
-
   const isConnecting = status === 'connecting'
   const isError = status === 'error'
 
@@ -231,20 +140,10 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
             : 'Idle'
 
   const microphoneMessage = isLive
-    ? isMicMuted
-      ? 'Mic muted — hold the button to speak'
-      : 'Mic live — release to mute'
+    ? 'Mic live — speak freely'
     : status === 'connecting'
-      ? 'Mic will stay muted until connected'
-      : 'Mic muted'
-
-  const microphoneClasses =
-    'call-screen__microphone' + (isLive && !isMicMuted ? ' call-screen__microphone--open' : '')
-
-  const pushToTalkClasses =
-    'call-screen__push-to-talk' + (isLive && !isMicMuted ? ' call-screen__push-to-talk--active' : '')
-
-  const pushToTalkLabel = isLive ? (isMicMuted ? 'Hold to Talk' : 'Release to Mute') : 'Hold to Talk'
+      ? 'Mic will activate once connected'
+      : 'Mic idle'
 
   return (
     <section className="call-screen">
@@ -253,10 +152,7 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
           type="button"
           className="call-screen__back"
           onClick={() => {
-            handleHoldEnd()
-            conversation.endSession().catch(() => {
-              /* ignore */
-            })
+            endSession()
             onBack()
           }}
         >
@@ -267,30 +163,9 @@ export const ElevenLabsCallScreen: React.FC<CallScreenProps> = ({ agentId, label
       <div className="call-screen__content">
         <h2 className="call-screen__title">Agent: {label}</h2>
         <p className="call-screen__status">Status: {statusLabel}</p>
-        <p className={microphoneClasses}>{microphoneMessage}</p>
+        <p className="call-screen__microphone">{microphoneMessage}</p>
 
         {error ? <p className="call-screen__error">{error}</p> : null}
-
-        <div className="call-screen__talk-area">
-          <button
-            type="button"
-            className={pushToTalkClasses}
-            disabled={!isLive}
-            aria-pressed={isLive && !isMicMuted}
-            onPointerDown={(event) => {
-              event.preventDefault()
-              handleHoldStart()
-            }}
-            onPointerUp={handleHoldEnd}
-            onPointerLeave={handleHoldEnd}
-            onPointerCancel={handleHoldEnd}
-            onBlur={handleHoldEnd}
-            onKeyDown={handleHoldKeyDown}
-            onKeyUp={handleHoldKeyUp}
-          >
-            {pushToTalkLabel}
-          </button>
-        </div>
 
         <button
           type="button"
