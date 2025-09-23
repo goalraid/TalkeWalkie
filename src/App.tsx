@@ -33,12 +33,13 @@ const ElevenLabsWidget: React.FC<{ agentId: string }> = ({ agentId }) => {
     const container = containerRef.current
     if (!container) return
 
+    container.innerHTML = ''
     const widget = document.createElement('elevenlabs-convai') as HTMLElement
     widget.setAttribute('agent-id', agentId)
     container.appendChild(widget)
 
     return () => {
-      widget.remove()
+      container.innerHTML = ''
     }
   }, [agentId])
 

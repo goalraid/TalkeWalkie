@@ -8,7 +8,7 @@ TalkieWalkie is a minimal "scan -> talk" web app: scan a QR code, resolve it to 
 - Local agent map that resolves to Vapi assistant IDs (RIO included out of the box).
 - Just-in-time microphone permission requests and Start/End Call controls via the Vapi Web SDK.
 - Mode selector lets you switch between the Vapi call flow and the ElevenLabs Convai embed.
-- Push-to-talk mic control is available for the Vapi flow; the ElevenLabs widget manages audio permissions itself.
+- Push-to-talk mic control is available for the Vapi flow; the ElevenLabs widget manages audio itself.
 - Permission dashboard to request camera/mic access and surface current browser status.
 - Clean teardown of camera and call resources when navigating between screens.
 
