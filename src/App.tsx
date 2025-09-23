@@ -33,12 +33,8 @@ const ElevenLabsWidget: React.FC<{ agentId: string }> = ({ agentId }) => {
     const container = containerRef.current
     if (!container) return
 
-    const existing = container.querySelector('elevenlabs-convai')
-    existing?.remove()
-
     const widget = document.createElement('elevenlabs-convai') as HTMLElement
     widget.setAttribute('agent-id', agentId)
-    widget.setAttribute('override-first-message', 'Hey! How can I help today?')
     container.appendChild(widget)
 
     return () => {
@@ -246,7 +242,7 @@ function App() {
                 </header>
                 <div className="call-screen__content">
                   <h2 className="call-screen__title">Agent: {agent.label}</h2>
-                  <p className="call-screen__status">ElevenLabs Widget</p>
+                  <p className="call-screen__status">Chatting via ElevenLabs Convai</p>
                   <ElevenLabsWidget agentId={agent.id} />
                   <button type="button" className="call-screen__primary" onClick={() => restartScanner()}>
                     Back to Scanner
