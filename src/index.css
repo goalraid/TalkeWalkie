@@ -375,6 +375,20 @@ button:not(:disabled):hover {
   border-radius: 12px;
 }
 
+
+.call-screen__widget {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 1.25rem 0;
+}
+
+.call-screen__widget elevenlabs-convai {
+  width: 100%;
+  max-width: 360px;
+  display: block;
+}
+
 .call-screen__primary {
   align-self: stretch;
   justify-content: center;
