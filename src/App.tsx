@@ -1,7 +1,7 @@
 import React from 'react'
 import { Scanner } from './components/Scanner'
 import { CallScreen } from './components/CallScreen'
-import { ElevenLabsCallScreen } from './components/ElevenLabsCallScreen'
+
 import {
   ELEVENLABS_LOOKUP,
   VAPI_LOOKUP,
@@ -23,6 +23,30 @@ type Provider = 'vapi' | 'elevenlabs'
 const PROVIDER_LABELS: Record<Provider, string> = {
   vapi: 'Vapi',
   elevenlabs: 'ElevenLabs',
+}
+
+
+const ElevenLabsWidget: React.FC<{ agentId: string }> = ({ agentId }) => {
+  const containerRef = React.useRef<HTMLDivElement | null>(null)
+
+  React.useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const existing = container.querySelector('elevenlabs-convai')
+    existing?.remove()
+
+    const widget = document.createElement('elevenlabs-convai') as HTMLElement
+    widget.setAttribute('agent-id', agentId)
+    widget.setAttribute('override-first-message', 'Hey! How can I help today?')
+    container.appendChild(widget)
+
+    return () => {
+      widget.remove()
+    }
+  }, [agentId])
+
+  return <div className="call-screen__widget" ref={containerRef} />
 }
 
 function App() {
@@ -145,14 +169,26 @@ function App() {
     setScannerError(msg)
   }, [])
 
-  if (!provider || stage === 'home') {
-    return (
-      <main className="app app--home">
-        <header className="app__header">
-          <h1 className="app__title">TalkieWalkie</h1>
-          <p className="app__subtitle">Choose a voice stack to get started.</p>
-        </header>
+  return (
+    <main className={'app app--' + stage}>
+      <header className="app__header">
+        <div className="app__header-top">
+          <div>
+            <h1 className="app__title">TalkieWalkie</h1>
+            <p className="app__subtitle">Scan a code to talk instantly.</p>
+          </div>
+          {provider ? (
+            <div className="app__mode">
+              <span className="app__mode-label">Mode: {PROVIDER_LABELS[provider]}</span>
+              <button type="button" className="app__mode-switch" onClick={clearProvider}>
+                Change Mode
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </header>
 
+      {!provider ? (
         <section className="app__selector">
           <p className="app__selector-label">Select a mode</p>
           <div className="app__selector-actions">
@@ -165,95 +201,90 @@ function App() {
           </div>
           <p className="app__selector-hint">You can switch providers anytime.</p>
         </section>
-      </main>
-    )
-  }
-
-  const providerLabel = PROVIDER_LABELS[provider]
-
-  return (
-    <main className={'app app--' + stage}>
-      <header className="app__header">
-        <div className="app__header-top">
-          <div>
-            <h1 className="app__title">TalkieWalkie</h1>
-            <p className="app__subtitle">Scan a code to talk instantly.</p>
-          </div>
-          <div className="app__mode">
-            <span className="app__mode-label">Mode: {providerLabel}</span>
-            <button type="button" className="app__mode-switch" onClick={clearProvider}>
-              Change Mode
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <section className="app__permissions">
-        <div className="app__permission-actions">
-          <button
-            type="button"
-            className="app__permission-request"
-            onClick={() => requestMediaPermissions()}
-            disabled={!isMediaDevicesSupported}
-          >
-            Request Camera &amp; Microphone
-          </button>
-          <button
-            type="button"
-            className="app__permission-refresh"
-            onClick={() => refreshPermissions()}
-            disabled={!isPermissionApiSupported}
-          >
-            Refresh Status
-          </button>
-        </div>
-        <div className="app__permission-badges">
-          <span className={`app__permission-badge app__permission-badge--${cameraPermission}`}>
-            Camera: {cameraPermission}
-          </span>
-          <span className={`app__permission-badge app__permission-badge--${microphonePermission}`}>
-            Microphone: {microphonePermission}
-          </span>
-        </div>
-        {permissionError ? <p className="app__permission-error">{permissionError}</p> : null}
-        {!isPermissionApiSupported ? (
-          <p className="app__permission-note">Permission status checks are not supported in this browser.</p>
-        ) : null}
-      </section>
-
-      {stage === 'call' && agent ? (
-        provider === 'elevenlabs' ? (
-          <ElevenLabsCallScreen agentId={agent.id} label={agent.label} onBack={() => restartScanner()} />
-        ) : (
-          <CallScreen assistantId={agent.id} label={agent.label} onBack={() => restartScanner()} />
-        )
       ) : (
-        <section className="scanner-section">
-          {stage === 'resolving' ? (
-            <div className="scanner-section__message">Resolving agent...</div>
-          ) : (
-            <>
-              {scannerError ? (
-                <div className="scanner-section__error">
-                  <p>{scannerError}</p>
-                  <button type="button" onClick={() => restartScanner()}>
-                    Retry Scanner
+        <>
+          <section className="app__permissions">
+            <div className="app__permission-actions">
+              <button
+                type="button"
+                className="app__permission-request"
+                onClick={() => requestMediaPermissions()}
+                disabled={!isMediaDevicesSupported}
+              >
+                Request Camera & Microphone
+              </button>
+              <button
+                type="button"
+                className="app__permission-refresh"
+                onClick={() => refreshPermissions()}
+                disabled={!isPermissionApiSupported}
+              >
+                Refresh Status
+              </button>
+            </div>
+            <div className="app__permission-badges">
+              <span className={`app__permission-badge app__permission-badge--${cameraPermission}`}>
+                Camera: {cameraPermission}
+              </span>
+              <span className={`app__permission-badge app__permission-badge--${microphonePermission}`}>
+                Microphone: {microphonePermission}
+              </span>
+            </div>
+            {permissionError ? <p className="app__permission-error">{permissionError}</p> : null}
+            {!isPermissionApiSupported ? (
+              <p className="app__permission-note">Permission status checks are not supported in this browser.</p>
+            ) : null}
+          </section>
+
+          {stage === 'call' && agent ? (
+            provider === 'elevenlabs' ? (
+              <section className="call-screen">
+                <header className="call-screen__header">
+                  <button type="button" className="call-screen__back" onClick={() => restartScanner()}>
+                    Back to Scanner
+                  </button>
+                </header>
+                <div className="call-screen__content">
+                  <h2 className="call-screen__title">Agent: {agent.label}</h2>
+                  <p className="call-screen__status">ElevenLabs Widget</p>
+                  <ElevenLabsWidget agentId={agent.id} />
+                  <button type="button" className="call-screen__primary" onClick={() => restartScanner()}>
+                    Back to Scanner
                   </button>
                 </div>
+              </section>
+            ) : (
+              <CallScreen assistantId={agent.id} label={agent.label} onBack={restartScanner} />
+            )
+          ) : (
+            <section className="scanner-section">
+              {stage === 'resolving' ? (
+                <div className="scanner-section__message">Resolving agent...</div>
               ) : (
-                <Scanner
-                  key={scannerResetToken}
-                  onDetected={handleDetection}
-                  onError={handleScannerError}
-                />
+                <>
+                  {scannerError ? (
+                    <div className="scanner-section__error">
+                      <p>{scannerError}</p>
+                      <button type="button" onClick={() => restartScanner()}>
+                        Retry Scanner
+                      </button>
+                    </div>
+                  ) : (
+                    <Scanner
+                      key={scannerResetToken}
+                      onDetected={handleDetection}
+                      onError={handleScannerError}
+                    />
+                  )}
+                  {message ? <p className="scanner-section__message">{message}</p> : null}
+                  <p className="scanner-section__note">
+                    Need a code? Try <strong>Rio</strong>. ({PROVIDER_LABELS[provider]})
+                  </p>
+                </>
               )}
-              {message ? <p className="scanner-section__message">{message}</p> : null}
-              <p className="scanner-section__note">
-                Need a code? Try <strong>Rio</strong>. ({providerLabel})
-              </p>
-            </>
+            </section>
           )}
-        </section>
+        </>
       )}
     </main>
   )
