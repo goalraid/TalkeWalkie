@@ -7,7 +7,7 @@ TalkieWalkie is a minimal "scan -> talk" web app: scan a QR code, resolve it to 
 - Flexible QR payload support (`rio`, `talkiewalkie://agent/rio`, `{ "agent": "rio" }`).
 - Local agent map that resolves to Vapi assistant IDs (RIO included out of the box).
 - Just-in-time microphone permission requests and Start/End Call controls via the Vapi Web SDK.
-- Scan and connect directly to the Vapi voice agent with minimal UI friction.
+- Banyan tree animation loops while the call connects so users know the agent is warming up.
 - Streamlined mic permission request with a single Start/End Call control.
 - Permission dashboard to request camera/mic access and surface current browser status.
 - Animated banyan tree plays while the call connects so users know the agent is spinning up.

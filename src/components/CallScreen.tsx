@@ -20,6 +20,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
   const [status, setStatus] = React.useState<CallStatus>('idle')
   const [error, setError] = React.useState<string | null>(null)
   const statusRef = React.useRef<CallStatus>('idle')
+  const videoRef = React.useRef<HTMLVideoElement | null>(null)
 
   React.useEffect(() => {
     statusRef.current = status
@@ -34,7 +35,6 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
     try {
       await requestMicrophonePermission()
       await vapi.start(assistantId)
-      setStatus('live')
     } catch (err) {
       console.error('[CallScreen] Failed to start call', err)
       setStatus('error')
@@ -111,6 +111,16 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
             : 'Error'
   const showConnectingVideo = status !== 'live' && status !== 'error'
 
+  React.useEffect(() => {
+    if (showConnectingVideo) {
+      const video = videoRef.current
+      if (video) {
+        video.currentTime = 0
+        void video.play().catch(() => {})
+      }
+    }
+  }, [showConnectingVideo])
+
   return (
     <section className="call-screen">
       <header className="call-screen__header">
@@ -137,12 +147,16 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
 
         {showConnectingVideo ? (
           <video
+            key={assistantId}
+            ref={videoRef}
             className="call-screen__video-preview"
             src="/banya-loop.mp4"
             muted
             autoPlay
             loop
             playsInline
+            preload="auto"
+            aria-hidden="true"
           />
         ) : null}
 
