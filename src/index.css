@@ -296,6 +296,15 @@ button:not(:disabled):hover {
   min-height: 3.25rem;
 }
 
+.call-screen__video-preview {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 20px;
+  margin: 1.5rem auto;
+  display: block;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.2);
+}
+
 
 .call-screen__push-to-talk:disabled {
   opacity: 0.5;

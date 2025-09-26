@@ -5,7 +5,6 @@ type CallStatus = 'idle' | 'connecting' | 'live' | 'ended' | 'error'
 
 type CallScreenProps = {
   assistantId: string
-  label: string
   onBack: () => void
 }
 
@@ -17,7 +16,7 @@ async function requestMicrophonePermission() {
   stream.getTracks().forEach((track) => track.stop())
 }
 
-export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, label, onBack }) => {
+export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) => {
   const [status, setStatus] = React.useState<CallStatus>('idle')
   const [error, setError] = React.useState<string | null>(null)
   const statusRef = React.useRef<CallStatus>('idle')
@@ -110,6 +109,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, label, onBa
           : status === 'ended'
             ? 'Ended'
             : 'Error'
+  const showConnectingVideo = status !== 'live' && status !== 'error'
 
   return (
     <section className="call-screen">
@@ -130,10 +130,21 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, label, onBa
       </header>
 
       <div className="call-screen__content">
-        <h2 className="call-screen__title">Agent: {label}</h2>
+        <h2 className="call-screen__title">Say hello to Banya</h2>
         <p className="call-screen__status">Status: {statusLabel}</p>
 
         {error ? <p className="call-screen__error">{error}</p> : null}
+
+        {showConnectingVideo ? (
+          <video
+            className="call-screen__video-preview"
+            src="/banya-loop.mp4"
+            muted
+            autoPlay
+            loop
+            playsInline
+          />
+        ) : null}
 
         <button
           type="button"

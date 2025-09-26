@@ -151,7 +151,7 @@ function App() {
       </section>
 
       {stage === 'call' && agent ? (
-        <CallScreen assistantId={agent.id} label={agent.label} onBack={() => restartScanner()} />
+        <CallScreen assistantId={agent.id} onBack={() => restartScanner()} />
       ) : (
         <section className="scanner-section">
           {stage === 'resolving' ? (
