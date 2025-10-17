@@ -5,7 +5,7 @@ type CallStatus = 'idle' | 'connecting' | 'live' | 'ended' | 'error'
 
 type CallScreenProps = {
   assistantId: string
-  onBack: () => void
+  onBack?: () => void
 }
 
 async function requestMicrophonePermission() {
@@ -27,7 +27,9 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
   }, [status])
 
   const startCall = React.useCallback(async () => {
-    if (statusRef.current === 'connecting' || statusRef.current === 'live') return
+    if (statusRef.current === 'connecting' || statusRef.current === 'live') {
+      return
+    }
 
     setError(null)
     setStatus('connecting')
@@ -103,13 +105,15 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
     status === 'live'
       ? 'Live'
       : status === 'connecting'
-        ? 'Connecting…'
+        ? 'Connecting...'
         : status === 'idle'
           ? 'Idle'
           : status === 'ended'
             ? 'Ended'
             : 'Error'
+
   const showConnectingVideo = status !== 'live' && status !== 'error'
+  const showBackButton = typeof onBack === 'function'
 
   React.useEffect(() => {
     if (showConnectingVideo) {
@@ -123,21 +127,23 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
 
   return (
     <section className="call-screen">
-      <header className="call-screen__header">
-        <button
-          type="button"
-          className="call-screen__back"
-          onClick={() => {
-            try {
-              vapi.stop()
-            } finally {
-              onBack()
-            }
-          }}
-        >
-          ← Back to Scanner
-        </button>
-      </header>
+      {showBackButton ? (
+        <header className="call-screen__header">
+          <button
+            type="button"
+            className="call-screen__back"
+            onClick={() => {
+              try {
+                vapi.stop()
+              } finally {
+                onBack?.()
+              }
+            }}
+          >
+            Back
+          </button>
+        </header>
+      ) : null}
 
       <div className="call-screen__content">
         <h2 className="call-screen__title">Say hello to Banya</h2>
@@ -174,7 +180,7 @@ export const CallScreen: React.FC<CallScreenProps> = ({ assistantId, onBack }) =
           }}
           disabled={isConnecting}
         >
-          {isLive ? 'End Call' : isConnecting ? 'Connecting…' : isError ? 'Retry Call' : 'Start Call'}
+          {isLive ? 'End Call' : isConnecting ? 'Connecting...' : isError ? 'Retry Call' : 'Start Call'}
         </button>
       </div>
     </section>
